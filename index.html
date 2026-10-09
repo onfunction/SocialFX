@@ -1303,19 +1303,31 @@ gtag('config', 'G-BX9KDW7T8H');
             canvas.addEventListener('mousedown', startDrag); canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDrag(e.touches[0]); }, {passive:false});
             window.addEventListener('mousemove', drag); window.addEventListener('touchmove', (e) => { if(isDragging) e.preventDefault(); drag(e.touches[0]); }, {passive:false});
             window.addEventListener('mouseup', endDrag); window.addEventListener('touchend', endDrag);
+            window.addEventListener('touchcancel', endDrag); window.addEventListener('blur', endDrag);
 
+            function getDragPoint(e) {
+                if (!e) return null;
+                const rect = canvas.getBoundingClientRect();
+                if (rect.width <= 0 || rect.height <= 0) return null;
+                return {
+                    x: (e.clientX - rect.left) * (CANVAS_WIDTH / rect.width),
+                    y: (e.clientY - rect.top) * (CANVAS_HEIGHT / rect.height)
+                };
+            }
             function startDrag(e) {
                 if (!isVideoLoaded) return;
-                const rect = canvas.getBoundingClientRect(); isDragging = true;
-                lastMouseX = (e.clientX - rect.left) * (CANVAS_WIDTH / rect.width); lastMouseY = (e.clientY - rect.top) * (CANVAS_HEIGHT / rect.height);
+                const point = getDragPoint(e);
+                if (!point) return;
+                isDragging = true;
+                lastMouseX = point.x; lastMouseY = point.y;
                 canvas.style.cursor = 'grabbing';
             }
             function drag(e) {
                 if (!isDragging || !isVideoLoaded) return;
-                const rect = canvas.getBoundingClientRect();
-                const currentX = (e.clientX || e.touches?.[0]?.clientX - rect.left) * (CANVAS_WIDTH / rect.width);
-                const currentY = (e.clientY || e.touches?.[0]?.clientY - rect.top) * (CANVAS_HEIGHT / rect.height);
-                panX += currentX - lastMouseX; panY += currentY - lastMouseY; lastMouseX = currentX; lastMouseY = currentY;
+                const point = getDragPoint(e);
+                if (!point) return;
+                panX += point.x - lastMouseX; panY += point.y - lastMouseY;
+                lastMouseX = point.x; lastMouseY = point.y;
             }
             function endDrag() { isDragging = false; canvas.style.cursor = 'move'; }
 
